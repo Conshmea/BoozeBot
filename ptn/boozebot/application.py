@@ -45,7 +45,6 @@ async def boozebot():
         await bot.add_cog(DiscordBotCommands(bot))
         await bot.add_cog(Unloading(bot))
         await bot.add_cog(DatabaseInteraction(bot))
-        await bot.add_cog(Helper(bot))
         await bot.add_cog(PublicHoliday(bot))
         await bot.add_cog(MimicSteve(bot))
         await bot.add_cog(Cleaner(bot))
@@ -53,6 +52,7 @@ async def boozebot():
         await bot.add_cog(Departures(bot))
         await bot.add_cog(BackgroundTaskCommands(bot))
         await bot.add_cog(PrometheusCog(bot))
+        await bot.add_cog(Helper(bot))
 
         try:
             await bot.login(TOKEN)

@@ -34,9 +34,7 @@ STEVE HELPER COMMAND
 class Helper(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
-        
-        self.roles = {
-        }
+        self.CATEGORY_ROLES = [server_council_role_ids()[0], server_sommelier_role_id(), server_connoisseur_role_id(), server_wine_carrier_role_id()]
 
     # custom global error handler
     # attaching the handler when the cog is loaded
@@ -50,6 +48,7 @@ class Helper(commands.Cog):
     def cog_unload(self):
         tree = self.bot.tree
         tree.on_error = self._old_tree_error
+
         
     # Fetch all the role names
     @commands.Cog.listener()
@@ -59,398 +58,80 @@ class Helper(commands.Cog):
         except Exception as e:
             logging.exception(f"Failed to get guild: {e}")
 
-        for command in self.HelpCommandInformation:
-            # Get lowest role associated with command and add it to that category
-            try:
-                role = guild.get_role(command.value["roles"][-1]).name
-            except Exception as e:
-                logging.exception(f"Failed to get role: {e}")
 
-            if role not in self.roles:
-                self.roles[role] = []
-            self.roles[role].append(command.name)
+        self.commands_data = {}
+        
+        roles = await guild.fetch_roles()
+        
+        for command in self.bot.commands:
+            command_data = {}
+            command_data["name"] = command.qualified_name
+            command_data["description"] = command.help if hasattr(command, "help") else "No description provided"
+            command_data["roles"] = command.callback._permitted_roles if hasattr(command.callback, "_permitted_roles") else []
+            command_data["channel_restrictions"] = command.callback._permitted_channels if hasattr(command.callback, "_permitted_channels") else []
+            command_data["params"] = []
+            command_data["type"] = "Text Command"
+            command_data["invocation"] = f"b/{command.qualified_name}"
+            
+            permitted_roles = list(filter(lambda role: role in self.CATEGORY_ROLES, command_data["roles"]))
+            lowest_role_id = permitted_roles[-1] if permitted_roles else None
+                
+            if lowest_role_id:
+                try:
+                    lowest_role_name = next((role.name for role in roles if role.id == lowest_role_id), None)
+                except Exception as e:
+                    logging.exception(f"Failed to get role: {e}")
+            else:
+                lowest_role_name = "Everyone"
+            
+            if self.commands_data.get(lowest_role_name) is None:
+                self.commands_data[lowest_role_name] = []
 
-    """
-    Class to store all the different commands and their information
-        
-    """
+            self.commands_data[lowest_role_name].append(command_data)
 
-    class HelpCommandInformation(enum.Enum):
-        # Admin commands
-        _update = {
-            "method_desc": "Restart the bot.",
-            "roles": [*server_council_role_ids()],
-            "params": [],
-            "channel_restrictions": [],
-        }
-        _exit = {
-            "method_desc": "Stop the bot.",
-            "roles": [*server_council_role_ids()],
-            "params": [],
-            "channel_restrictions": [],
-        }
-        _version = {
-            "method_desc": "Get the bot version.",
-            "roles": [*server_council_role_ids()],
-            "params": [],
-            "channel_restrictions": [],
-        }
-        _sync = {
-            "method_desc": "Sync the bot command tree.",
-            "roles": [*server_council_role_ids()],
-            "params": [],
-            "channel_restrictions": [],
-        }
-        
-        # Somm commands
-        _ping = {
-            "method_desc": "Ping the bot.",
-            "roles": [*server_council_role_ids(), server_sommelier_role_id()],
-            "params": [],
-            "channel_restrictions": [],
-        }
-        steve_says = {
-            "method_desc": "Send a message as PirateSteve.",
-            "roles": [*server_council_role_ids(), server_mod_role_id(), server_sommelier_role_id()],
-            "params": [
-                {
-                    "name": "message",
-                    "description": "The message to send",
-                    "type": "str"
-                },
-                {
-                    "name": "send_channel",
-                    "description": "The channel to send the message in",
-                    "type": "discord.TextChannel"
-                }
-            ],
-            "channel_restrictions": [get_steve_says_channel()],
-        }
-        booze_started_admin_override = {
-            "method_desc": "Override the Public Holiday Started State.",
-            "roles": [*server_council_role_ids(), server_mod_role_id(), server_sommelier_role_id()],
-            "params": [
-                {
-                    "name": "state",
-                    "description": "The state to set the Public Holiday Started State to.",
-                    "type": "bool"
-                }
-            ],
-            "channel_restrictions": [get_steve_says_channel()],
-        }
-        wine_mark_completed_forcefully = {
-            "method_desc": "Forcefully mark a wine as completed.",
-            "roles": [*server_council_role_ids(), server_mod_role_id(), server_sommelier_role_id()],
-            "params": [
-                {
-                    "name": "carrier_id",
-                    "description": "The ID of the carrier to mark as completed.",
-                    "type": "str"
-                }
-            ],
-            "channel_restrictions": [get_steve_says_channel()],
-        }
-        booze_channels_open = {
-            "method_desc": "Open the booze channels to the public.",
-            "roles": [*server_council_role_ids(), server_mod_role_id(), server_sommelier_role_id()],
-            "params": [],
-            "channel_restrictions": [get_steve_says_channel()],
-        }
-        booze_channels_close = {
-            "method_desc": "Close the booze channels to the public.",
-            "roles": [*server_council_role_ids(), server_mod_role_id(), server_sommelier_role_id()],
-            "params": [],
-            "channel_restrictions": [get_steve_says_channel()],
-        }
-        clear_booze_roles = {
-            "method_desc": "Clear all the booze cruise roles from everyone.",
-            "roles": [*server_council_role_ids(), server_mod_role_id(), server_sommelier_role_id()],
-            "params": [],
-            "channel_restrictions": [get_steve_says_channel()],
-        }
-        set_wine_carrier_welcome = {
-            "method_desc": "Set the wine carrier welcome message.",
-            "roles": [*server_council_role_ids(), server_mod_role_id(), server_sommelier_role_id()],
-            "params": [],
-            "channel_restrictions": [get_steve_says_channel()],
-        }
-        booze_pin_message = {
-            "method_desc": "Pin a steve tally embed for automatic updating.",
-            "roles": [*server_council_role_ids(), server_mod_role_id(), server_sommelier_role_id()],
-            "params": [
-                {
-                    "name": "message_link",
-                    "description": "The link of the message to pin.",
-                    "type": "str"
-                }
-            ],
-            "channel_restrictions": [],
-        }
-        booze_unpin_all = {
-            "method_desc": "Unpin and forget all automatic updating tallies",
-            "roles": [*server_council_role_ids(), server_mod_role_id(), server_sommelier_role_id()],
-            "params": [],
-            "channel_restrictions": [get_steve_says_channel()],
-        }
-        booze_unpin_message = {
-            "method_desc": "Unpin and forget an automatic updating tally message",
-            "roles": [*server_council_role_ids(), server_mod_role_id(), server_sommelier_role_id()],
-            "params": [
-                {
-                    "name": "message_link",
-                    "description": "The link of the message to unpin.",
-                    "type": "str"
-                }
-            ],
-            "channel_restrictions": [get_steve_says_channel()],
-        }
-        booze_delete_carrier = {
-            "method_desc": "Delete a carrier from the database.",
-            "roles": [*server_council_role_ids(), server_mod_role_id(), server_sommelier_role_id()],
-            "params": [
-                {
-                    "name": "carrier_id",
-                    "description": "The ID of the carrier to delete.",
-                    "type": "str"
-                }
-            ],
-            "channel_restrictions": [get_steve_says_channel()],
-        }
-        booze_archive_database = {
-            "method_desc": "Archive the database after the cruise has ended.",
-            "roles": [*server_council_role_ids(), server_mod_role_id(), server_sommelier_role_id()],
-            "params": [],
-            "channel_restrictions": [get_steve_says_channel()],
-        }
-        booze_configure_signup_forms = {
-            "method_desc": "Configure the signup forms for the cruise.",
-            "roles": [*server_council_role_ids(), server_mod_role_id(), server_sommelier_role_id()],
-            "params": [],
-            "channel_restrictions": [get_steve_says_channel()],
-        }
-        booze_reuse_signup_form = {
-            "method_desc": "Reuse the signup form from the last cruise again.",
-            "roles": [*server_council_role_ids(), server_mod_role_id(), server_sommelier_role_id()],
-            "params": [],
-            "channel_restrictions": [get_steve_says_channel()],
-        }
-        remove_wine_carrier = {
-            "method_desc": "Removes the Wine Carrier role from a user.",
-            "roles": [*server_council_role_ids(), server_mod_role_id(), server_sommelier_role_id()],
-            "params": [
-                {
-                    "name": "user",
-                    "description": "An @ mention of the Discord user to receive the role.",
-                    "type": "discord.Member"
-                }
-            ],
-            "channel_restrictions": [get_steve_says_channel()],
-        }
-        
-        # Connoisseur commands
-        update_booze_db = {
-            "method_desc": "Update the booze database from the google sheet.",
-            "roles": [*server_council_role_ids(), server_mod_role_id(), server_sommelier_role_id(), server_connoisseur_role_id()],
-            "params": [],
-            "channel_restrictions": [get_steve_says_channel()],
-        }
-        make_wine_carrier = {
-            "method_desc": "Give user the Wine Carrier role.",
-            "roles": [*server_council_role_ids(), server_mod_role_id(), server_sommelier_role_id(), server_connoisseur_role_id()],
-            "params": [
-                {
-                    "name": "user",
-                    "description": "An @ mention of the Discord user to receive the role.",
-                    "type": "discord.Member"
-                }
-            ],
-            "channel_restrictions": [],
-        }
-        booze_tally = {
-            "method_desc": "Get the current booze tally.",
-            "roles": [*server_council_role_ids(), server_mod_role_id(), server_sommelier_role_id(), server_connoisseur_role_id()],
-            "params": [],
-            "channel_restrictions": [],
-        }
-        booze_carrier_summary = {
-            "method_desc": "Get the summary of the carriers.",
-            "roles": [*server_council_role_ids(), server_mod_role_id(), server_sommelier_role_id(), server_connoisseur_role_id()],
-            "params": [],
-            "channel_restrictions": [],
-        }
-        booze_tally_extra_stats = {
-            "method_desc": "Get the extra stats for the booze tally.",
-            "roles": [*server_council_role_ids(), server_mod_role_id(), server_sommelier_role_id(), server_connoisseur_role_id()],
-            "params": [],
-            "channel_restrictions": [],
-        }
-        biggest_cruise_tally = {
-            "method_desc": "Get the biggest cruise tally.",
-            "roles": [*server_council_role_ids(), server_mod_role_id(), server_sommelier_role_id(), server_connoisseur_role_id()],
-            "params": [
-                {
-                    "name": "extended",
-                    "description": "Whether to return the extended stats.",
-                    "type": "bool"
-                    }
-                ],
-            "channel_restrictions": [],
-        }
-        
-        # Wine carrier commands
-        find_carriers_with_wine = {
-            "method_desc": "Find carriers with wine.",
-            "roles": [*server_council_role_ids(), server_mod_role_id(), server_sommelier_role_id(), server_connoisseur_role_id(), server_wine_carrier_role_id()],
-            "params": [],
-            "channel_restrictions": [get_steve_says_channel(), get_wine_carrier_channel()],
-        }
-        find_wine_carriers_for_platform = {
-            "method_desc": "Find carriers with wine for a specific platform.",
-            "roles": [*server_council_role_ids(), server_mod_role_id(), server_sommelier_role_id(), server_connoisseur_role_id(), server_wine_carrier_role_id()],
-            "params": [
-                {
-                    "name": "platform",
-                    "description": "The platform to search for.",
-                    "type": "str"
-                }
-            ],
-            "channel_restrictions": [get_steve_says_channel(), get_wine_carrier_channel()],
-        }
-        find_wine_carrier_by_id = {
-            "method_desc": "Find a wine carrier by their ID.",
-            "roles": [*server_council_role_ids(), server_mod_role_id(), server_sommelier_role_id(), server_connoisseur_role_id(), server_wine_carrier_role_id()],
-            "params": [
-                {
-                    "name": "carrier_id",
-                    "description": "The ID of the carrier to search for.",
-                    "type": "str"
-                }
-            ],
-            "channel_restrictions": [get_steve_says_channel(), get_wine_carrier_channel()],
-        }
-        wine_unload_complete = {
-            "method_desc": "Close the unload of a carrier and delete the wine unload post.",
-            "roles": [*server_council_role_ids(), server_mod_role_id(), server_sommelier_role_id(), server_connoisseur_role_id(), server_wine_carrier_role_id()],
-            "params": [
-                {
-                    "name": "carrier_id",
-                    "description": "The ID of the carrier to mark as unloaded.",
-                    "type": "str"
-                }
-            ],
-            "channel_restrictions": [wine_carrier_command_channel()],
-        }
-        wine_unload = {
-            "method_desc": "Track the unload of a carrier and create a wine unload post.",
-            "roles": [*server_council_role_ids(), server_mod_role_id(), server_sommelier_role_id(), server_connoisseur_role_id(), server_wine_carrier_role_id()],
-            "params": [
-                {
-                    "name": "carrier_id",
-                    "description": "The ID of the carrier to mark as unloaded.",
-                    "type": "str"
-                },
-                {
-                    "name": "body",
-                    "description": "A string representing the location of the carrier, ie Star, P1, P2",
-                    "type": "str"
-                },
-                {
-                    "name": "market_type",
-                    "description": "The market conditions for the carrier",
-                    "type": "str"
-                },
-                {
-                    "name": "unload_channel",
-                    "description": "The discord channel #xxx which the carrier will run timed unloads in",
-                    "type": "str"
-                }
-            ],
-            "channel_restrictions": [wine_carrier_command_channel()],
-        }
-        wine_helper_market_open = {
-            "method_desc": "Creates a new unloading helper operation in this channel.",
-            "roles": [*server_council_role_ids(), server_mod_role_id(), server_sommelier_role_id(), server_connoisseur_role_id(), server_wine_carrier_role_id()],
-            "params": [],
-            "channel_restrictions": [],
-        }
-        wine_helper_market_closed = {
-            "method_desc": "Sends a message to indicate you have closed your market. Command sent in active channel.",
-            "roles": [*server_council_role_ids(), server_mod_role_id(), server_sommelier_role_id(), server_connoisseur_role_id(), server_wine_carrier_role_id()],
-            "params": [],
-            "channel_restrictions": [],
-        }
-        wine_carrier_departure = {
-            "method_desc": "Post a departure notice for a carrier.",
-            "roles": [*server_council_role_ids(), server_mod_role_id(), server_sommelier_role_id(), server_connoisseur_role_id(), server_wine_carrier_role_id()],
-            "params": [
-                {
-                    "name": "carrier_id",
-                    "description": "The ID of the carrier to post a departure notice for.",
-                    "type": "str"
-                },
-                {
-                    "name": "departure_location",
-                    "description": "The location the carrier is departing from.",
-                    "type": "str"
-                },
-                {
-                    "name": "arrival_location",
-                    "description": "The location the carrier is arriving to.",
-                    "type": "str"
-                },
-                {
-                    "name": "departing_at",
-                    "description": "The unix timestamp, or discord timestamp of the carrier departure.",
-                    "type": "str"
-                },
-                {
-                    "name": "departing_in",
-                    "description": "The number of minutes until the carrier departs.",
-                    "type": "float"
-                }
-            ],
-            "channel_restrictions": [wine_carrier_command_channel()],
-        }
-        
-        booze_carrier_stats = {
-            "method_desc": "Get the stats for a specific carrier.",
-            "roles": [*server_council_role_ids(), server_mod_role_id(), server_sommelier_role_id(), server_connoisseur_role_id(), server_wine_carrier_role_id()],
-            "params": [
-                {
-                    "name": "carrier_id",
-                    "description": "The ID of the carrier to get stats for.",
-                    "type": "str"
-                }
-            ],
-            "channel_restrictions": [],
-        }
-        
-        # Everyone commands
-        pirate_steve_help = {
-            "method_desc": "Returns some information for each command.",
-            "roles": [*server_council_role_ids(), server_mod_role_id(), server_sommelier_role_id(), server_connoisseur_role_id(), server_wine_carrier_role_id(), bot_guild_id()],
-            "params": [],
-            "channel_restrictions": [],
-        }
-        booze_duration_remaining = {
-            "method_desc": "Get the remaining duration of the cruise.",
-            "roles": [*server_council_role_ids(), server_mod_role_id(), server_sommelier_role_id(), server_connoisseur_role_id(), server_wine_carrier_role_id(), bot_guild_id()],
-            "params": [],
-            "channel_restrictions": [],
-        }
-        
-    
-    def get_command_info(self, command_name):
-        """
-        Function to get the command information for a specific command.
+            
+        for command in self.bot.tree.get_commands():
+            
+            if isinstance(command, discord.app_commands.Group):
+                continue
+            
+            command_data = {}
+            command_data["name"] = command.qualified_name
+            command_data["description"] = command.description if hasattr(command, "description") else "No description provided"
+            command_data["roles"] = command.callback._permitted_roles if hasattr(command.callback, "_permitted_roles") else []
+            command_data["channel_restrictions"] = command.callback._permitted_channels if hasattr(command.callback, "_permitted_channels") else []
+            command_data["params"] = []
+            
+            if isinstance(command, discord.app_commands.ContextMenu):
+                command_data["type"] = "Context Menu"
+                command_data["invocation"] = f"Context Menu: {command.qualified_name}"
+            else:
+                command_data["type"] = "Slash Command"
+                command_data["invocation"] = f"/{command.qualified_name}"
+            
+            if command_data["type"] != "Context Menu":
+                for param in command.parameters:
+                    command_data["params"].append({
+                        "name": param.display_name,
+                        "description": param.description if hasattr(param, "description") else "No description provided",
+                        "type": param.type,
+                    })
+            
+            permitted_roles = list(filter(lambda role: role in self.CATEGORY_ROLES, command_data["roles"]))
+            lowest_role_id = permitted_roles[-1] if permitted_roles else None
+            
+            if lowest_role_id:
+                try:
+                    lowest_role_name = next((role.name for role in roles if role.id == lowest_role_id), None)
+                except Exception as e:
+                    logging.exception(f"Failed to get role: {e}")
+            else:
+                lowest_role_name = "Everyone"
+            
+            if self.commands_data.get(lowest_role_name) is None:
+                self.commands_data[lowest_role_name] = []
 
-        :param str command_name: The command name to get information for
-        :returns: dict
-        """
-
-        # Get the command information from the enum class
-        command = self.HelpCommandInformation[command_name]
-        return command
+            self.commands_data[lowest_role_name].append(command_data)
       
     def buildHelpEmbed(self, command):
         """
@@ -461,20 +142,12 @@ class Helper(commands.Cog):
         """
 
         #Get command name and info from enum class
-        commandName = command.name
+        commandName = command["name"]
         
-        if commandName.startswith("_"):
-            commandName = commandName[1:]
-            commandName = "b/"+commandName
-        else:
-            commandName = "/"+commandName
-        
-        commandInfo = command.value
-        
-        method_desc = commandInfo["method_desc"]
-        roles = commandInfo["roles"]
-        params = commandInfo["params"]
-        channels = commandInfo["channel_restrictions"]
+        description = command["description"]
+        roles = command["roles"]
+        params = command["params"]
+        channels = command["channel_restrictions"]
         
         channels = [f'<#{channel}>' for channel in channels]
         channelText = f'**Channel Restrictions**: {", ".join(channels)}.' if channels else ''
@@ -484,7 +157,8 @@ class Helper(commands.Cog):
         
         response_embed = discord.Embed(
             title=f'Batten down the hatches!\nPirate Steve knows the following for: {commandName}.',
-            description=f'**Description**: {method_desc}\n'
+            description=f'**Invocation**: {command["invocation"]}\n'
+                        f'**Description**: {description}\n'
                         f'{roleText}\n'
                         f'{channelText}\n'
                         f'**Params**: '
@@ -504,7 +178,7 @@ class Helper(commands.Cog):
             response_embed.description += 'None.'
             
         return response_embed
-   
+
    
     @app_commands.command(name="pirate_steve_help", description="Returns some information for each command.")
     async def get_help(self, interaction: discord.Interaction):
@@ -513,7 +187,7 @@ class Helper(commands.Cog):
                 
         options = [
             discord.SelectOption(label=role, value=role)
-            for role in self.roles.keys()
+            for role in self.commands_data.keys()
         ]
         role_select = discord.ui.Select(placeholder="Choose a role...", options=options)
         
@@ -522,17 +196,18 @@ class Helper(commands.Cog):
         async def select_callback(interaction: discord.Interaction):
             role = role_select.values[0]
             print(f"Role selected: {role}")
-            commands = self.roles[role]
+            commands = self.commands_data[role]
             command_options = [
-                discord.SelectOption(label=cmd, value=cmd)
+                discord.SelectOption(label=cmd["name"], value=cmd["name"])
                 for cmd in commands
             ]
             command_select = discord.ui.Select(placeholder="Choose a command...", options=command_options)
 
             async def command_select_callback(interaction: discord.Interaction):
                 command_name = command_select.values[0]
+                
+                command = next((cmd for cmd in commands if cmd["name"] == command_name), None)
                 print(f"Command selected: {command_name}")
-                command = self.get_command_info(command_name)
                 response_embed = self.buildHelpEmbed(command)
                 print("Sending command information message")
                 await interaction.response.defer()

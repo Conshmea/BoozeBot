@@ -150,7 +150,7 @@ class PublicHoliday(commands.Cog):
 
     
     @app_commands.command(name="booze_started", description="Returns a GIF for whether the holiday has started.")
-    @check_roles([server_connoisseur_role_id(), server_sommelier_role_id(), server_mod_role_id(), *server_council_role_ids()])
+    @check_roles([*server_council_role_ids(), server_mod_role_id(),server_sommelier_role_id(), server_connoisseur_role_id()])
     async def holiday_query(self, interaction: discord.Interaction):
         await interaction.response.defer()
         print(f'User {interaction.user.name} wanted to know if the holiday has started.')
@@ -180,7 +180,7 @@ class PublicHoliday(commands.Cog):
     @app_commands.command(name="booze_started_admin_override",
                           description="Overrides the holiday admin flag."
                                       "Used to set the holiday state before the polling API catches it.")
-    @check_roles([server_sommelier_role_id(), server_mod_role_id(), *server_council_role_ids()])
+    @check_roles([*server_council_role_ids(), server_mod_role_id(),server_sommelier_role_id()])
     @describe(state="True or False to override the holiday check flag.")
     @check_command_channel([get_steve_says_channel()])
     async def admin_override_holiday_state(self, interaction: discord.Interaction, state: bool):
@@ -191,7 +191,7 @@ class PublicHoliday(commands.Cog):
     @app_commands.command(name="booze_timestamp_admin_override",
                           description="Overrides the holiday start time."
                                       "Used to set the cruise start time used to get the duration")
-    @check_roles([server_sommelier_role_id(), server_mod_role_id(), *server_council_role_ids()])
+    @check_roles([*server_council_role_ids(), server_mod_role_id(),server_sommelier_role_id()])
     @describe(timestamp="Date time of the the cruise starting in the format YYYY-MM-DD HH:MI:SS")
     @check_command_channel([get_steve_says_channel()])
     async def admin_override_start_timestamp(self, interaction: discord.Interaction, timestamp: str):

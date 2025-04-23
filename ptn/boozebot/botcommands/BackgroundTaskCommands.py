@@ -15,7 +15,7 @@ class BackgroundTaskCommands(commands.Cog):
         self.bot = bot
 
     @app_commands.command(name="start_task", description="Starts a background task.")
-    @check_roles([server_mod_role_id(), server_sommelier_role_id(), *server_council_role_ids()])
+    @check_roles([*server_council_role_ids(), server_mod_role_id(), server_sommelier_role_id()])
     @check_command_channel(get_steve_says_channel())
     @describe(
         task_name="The name of the task to start."
@@ -40,7 +40,7 @@ class BackgroundTaskCommands(commands.Cog):
 
 
     @app_commands.command(name="stop_task", description="Stops a background task.")
-    @check_roles([server_mod_role_id(), server_sommelier_role_id(), *server_council_role_ids()])
+    @check_roles([*server_council_role_ids(), server_mod_role_id(), server_sommelier_role_id()])
     @check_command_channel(get_steve_says_channel())
     @describe(
         task_name="The name of the task to stop."
@@ -65,7 +65,7 @@ class BackgroundTaskCommands(commands.Cog):
           
     
     @app_commands.command(name="task_status", description="Gets the status of a background task.")
-    @check_roles([server_mod_role_id(), server_sommelier_role_id(), *server_council_role_ids()])
+    @check_roles([*server_council_role_ids(), server_mod_role_id(), server_sommelier_role_id()])
     @check_command_channel(get_steve_says_channel())
     @describe(
         task_name="The name of the task to check."
