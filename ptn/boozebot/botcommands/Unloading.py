@@ -47,11 +47,36 @@ class Unloading(commands.Cog):
         tree = self.bot.tree
         self._old_tree_error = tree.on_error
         tree.on_error = on_app_command_error
+        
+        self.ctx_menu = app_commands.ContextMenu(
+            name="Unload Complete",
+            callback=self.ctx_menu_unload_complete
+        )
+        self.bot.tree.add_command(self.ctx_menu)
 
     # detaching the handler when the cog is unloaded
     def cog_unload(self):
         tree = self.bot.tree
         tree.on_error = self._old_tree_error
+        
+    @check_roles([*server_council_role_ids(), server_sommelier_role_id(), server_mod_role_id(), server_connoisseur_role_id(), server_wine_carrier_role_id()])
+    async def ctx_menu_unload_complete(self, interaction: discord.Interaction, unload_message: discord.Message):
+        await interaction.response.defer(ephemeral=True)
+        print(f"User {interaction.user.name} has requested to close unload with message id: {unload_message.id}.")
+        
+        pirate_steve_db.execute("SELECT * FROM boozecarriers WHERE discord_unload_in_progress LIKE (?)", (f"%{unload_message.id}%",))
+
+        # We will only get a single entry back here as the carrierid is a unique field.
+        carrier_data = BoozeCarrier(pirate_steve_db.fetchone())
+        
+        if not carrier_data:
+            print(f"No carrier found while searching the DB for: {unload_message.id}")
+            return await interaction.edit_original_response(
+                content=f"No carrier found while searching the DB for: {unload_message.id}"
+            )
+        
+        await self.close_unload(interaction, carrier_data, True)
+        
 
     """
     This class is a collection functionality for tracking a booze cruise unload operations
@@ -523,11 +548,61 @@ class Unloading(commands.Cog):
 
         # We will only get a single entry back here as the carrierid is a unique field.
         carrier_data = BoozeCarrier(pirate_steve_db.fetchone())
+        
         if not carrier_data:
             print(f"No carrier found while searching the DB for: {carrier_id}")
             return await interaction.edit_original_response(
                 content=f"Sorry, could not find a carrier for the ID data in DB: {carrier_id}."
             )
+        
+        await self.close_unload(interaction, carrier_data, False)
+
+    @app_commands.command(name="toggle_timed_unloads", description="Toggle the status of timed unloads.")
+    @check_roles([*server_council_role_ids(), server_mod_role_id(), server_sommelier_role_id()])
+    async def toggle_timed_unloads(self, interaction: discord.Interaction):
+        """
+        Toggle allowing timed unloads.
+
+        Args:
+            interaction (discord.Interaction): The discord interaction context.
+        """
+
+        await interaction.response.defer(ephemeral=True)
+
+        # Log the request
+        guild = bot.get_guild(bot_guild_id())
+        steve_says_channel = guild.get_channel(get_steve_says_channel())
+        new_status = "Disabled" if self.timed_unloads_allowed else "Enabled"
+        msg = f"requested to toggle the timed unloads status to: '{new_status}'."
+        print(f"{interaction.user.name} {msg}")
+        await steve_says_channel.send(f"{interaction.user.mention} {msg}", silent=True)
+        self.timed_unloads_allowed = not self.timed_unloads_allowed
+        # Send the response message
+        await interaction.edit_original_response(content=f"Timed unloads are now '{new_status}'.")
+
+    @app_commands.command(
+        name="set_timed_unload_hold_duration", description="Set the hold duration for timed unloads in minutes."
+    )
+    @describe(duration_minutes="Duration in minutes to hold the timed unload market before it is opened.")
+    @check_roles([*server_council_role_ids(), server_mod_role_id(), server_sommelier_role_id()])
+    @check_command_channel(get_steve_says_channel())
+    async def set_timed_unload_hold_duration(self, interaction: discord.Interaction, duration_minutes: float):
+        """
+        Set the hold duration for timed unloads.
+
+        Args:
+            interaction (discord.Interaction): The discord interaction context.
+            duration_minutes (float): Duration in minutes to hold the timed unload market before it is opened.
+        """
+
+        await interaction.response.defer()
+        print(f"{interaction.user.name} requested to set the timed unload hold duration to {duration_minutes} minutes.")
+
+        self.timed_unload_hold_duration = duration_minutes
+        await interaction.followup.send(f"Timed unload hold duration set to {duration_minutes} minutes.")
+
+    async def close_unload(self, interaction: discord.Interaction, carrier_data: BoozeCarrier, ephemeral: bool):        
+        carrier_id = carrier_data.carrier_identifier
 
         if not carrier_data.discord_unload_notification or carrier_data.discord_unload_notification == "NULL":
             print(f"No discord alert found for carrier, {carrier_id}. It likely ran an untracked market.")
@@ -578,51 +653,14 @@ class Unloading(commands.Cog):
         conn_role = guild.get_role(server_connoisseur_role_id())
         allowed_mentions.roles = [conn_role]
 
-        await interaction.edit_original_response(content=response, allowed_mentions=allowed_mentions)
-        await interaction.edit_original_response(
-            content=f"<@&{server_connoisseur_role_id()}> {response}", allowed_mentions=allowed_mentions
-        )
-
-    @app_commands.command(name="toggle_timed_unloads", description="Toggle the status of timed unloads.")
-    @check_roles([*server_council_role_ids(), server_mod_role_id(), server_sommelier_role_id()])
-    async def toggle_timed_unloads(self, interaction: discord.Interaction):
-        """
-        Toggle allowing timed unloads.
-
-        Args:
-            interaction (discord.Interaction): The discord interaction context.
-        """
-
-        await interaction.response.defer(ephemeral=True)
-
-        # Log the request
-        guild = bot.get_guild(bot_guild_id())
-        steve_says_channel = guild.get_channel(get_steve_says_channel())
-        new_status = "Disabled" if self.timed_unloads_allowed else "Enabled"
-        msg = f"requested to toggle the timed unloads status to: '{new_status}'."
-        print(f"{interaction.user.name} {msg}")
-        await steve_says_channel.send(f"{interaction.user.mention} {msg}", silent=True)
-        self.timed_unloads_allowed = not self.timed_unloads_allowed
-        # Send the response message
-        await interaction.edit_original_response(content=f"Timed unloads are now '{new_status}'.")
-
-    @app_commands.command(
-        name="set_timed_unload_hold_duration", description="Set the hold duration for timed unloads in minutes."
-    )
-    @describe(duration_minutes="Duration in minutes to hold the timed unload market before it is opened.")
-    @check_roles([*server_council_role_ids(), server_mod_role_id(), server_sommelier_role_id()])
-    @check_command_channel(get_steve_says_channel())
-    async def set_timed_unload_hold_duration(self, interaction: discord.Interaction, duration_minutes: float):
-        """
-        Set the hold duration for timed unloads.
-
-        Args:
-            interaction (discord.Interaction): The discord interaction context.
-            duration_minutes (float): Duration in minutes to hold the timed unload market before it is opened.
-        """
-
-        await interaction.response.defer()
-        print(f"{interaction.user.name} requested to set the timed unload hold duration to {duration_minutes} minutes.")
-
-        self.timed_unload_hold_duration = duration_minutes
-        await interaction.followup.send(f"Timed unload hold duration set to {duration_minutes} minutes.")
+        if ephemeral:
+            await interaction.edit_original_response(content=response)
+            rstc_channel = bot.get_channel(wine_carrier_command_channel())
+            message = await rstc_channel.send(response, allowed_mentions=allowed_mentions)
+            await message.edit(content=f"<@&{server_connoisseur_role_id()}> {response}", allowed_mentions=allowed_mentions)
+            
+        else:
+            await interaction.edit_original_response(content=response, allowed_mentions=allowed_mentions)
+            await interaction.edit_original_response(
+                content=f"<@&{server_connoisseur_role_id()}> {response}", allowed_mentions=allowed_mentions
+            )
