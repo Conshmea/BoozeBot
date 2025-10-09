@@ -3,7 +3,6 @@ Constants used throughout BoozeBot.
 
 """
 
-# libraries
 import ast
 import logging
 import os
@@ -20,7 +19,6 @@ from dotenv import load_dotenv
 _production = ast.literal_eval(os.environ.get("PTN_BOOZE_BOT", "False"))
 
 # define paths
-# TODO - check these all work in both live and testing, particularly default / fonts
 TESTING_DATA_PATH = os.path.join(
     os.getcwd(), "ptn", "boozebot", "data"
 )  # defines the path for use in a local testing environment

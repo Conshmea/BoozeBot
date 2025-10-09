@@ -1,4 +1,4 @@
-"""
+"""gspread
 Cog for all the commands that interact with the database
 
 """
@@ -12,16 +12,13 @@ import sqlite3
 from datetime import datetime, timedelta
 from typing import Literal
 
-import discord
 import gspread
 import gspread_asyncio
-from discord import app_commands
+from discord import app_commands, Embed, Interaction, Activity, ActivityType
 from discord.app_commands import Choice, describe
 from discord.ext import commands, tasks
 from google.oauth2.service_account import Credentials
-# local classes
 from ptn.boozebot.classes.BoozeCarrier import BoozeCarrier
-# local constants
 from ptn.boozebot.constants import (
     BOOZE_PROFIT_PER_TONNE_WINE, CARRIER_ID_RE, GOOGLE_OAUTH_CREDENTIALS_PATH, RACKHAMS_PEAK_POP, _production, bot,
     bot_guild_id, get_pilot_role_id, get_primary_booze_discussions_channel, get_steve_says_channel,
@@ -29,7 +26,6 @@ from ptn.boozebot.constants import (
     server_mod_role_id, server_sommelier_role_id, server_wine_carrier_role_id
 )
 from ptn.boozebot.database.database import dump_database, pirate_steve_conn, pirate_steve_db, pirate_steve_db_lock
-# local modules
 from ptn.boozebot.modules.ErrorHandler import CustomError, on_app_command_error
 from ptn.boozebot.modules.helpers import bc_channel_status, check_command_channel, check_roles, track_last_run
 from ptn.boozebot.modules.pagination import createPagination
@@ -207,7 +203,7 @@ class DatabaseInteraction(commands.Cog):
         # A JSON form tracking all the records
         self.client = await self.client_manager.authorize()
         records_data = await self.tracking_sheet.get_all_records()
-        new_signups = []  # type: list[discord.Embed]
+        new_signups = []  # type: list[Embed]
 
         total_entries = len(records_data)
         print(f"Updating the database we have: {total_entries} records found.")
@@ -330,7 +326,7 @@ class DatabaseInteraction(commands.Cog):
                     updated_db = True
                     print("Added carrier to the database")
 
-                    embed = discord.Embed(title="New WineCarrier signed up!")
+                    embed = Embed(title="New WineCarrier signed up!")
                     embed.add_field(
                         name=f"Owner: {carrier_data.discord_username}: {carrier_data.carrier_name} ({carrier_data.carrier_identifier})",
                         value=f"{carrier_data.wine_total // carrier_data.run_count} tonnes of wine on {carrier_data.platform}",
@@ -370,7 +366,7 @@ class DatabaseInteraction(commands.Cog):
     async def report_db_update_result(self, result: dict, force_embed=False):
 
         if result["updated_db"] or force_embed:
-            embed = discord.Embed(title="Pirate Steve's DB Update ran successfully.")
+            embed = Embed(title="Pirate Steve's DB Update ran successfully.")
             embed.add_field(
                 name=f'Total number of carriers: {result["total_carriers"]:>20}.\n'
                 f'Number of new carriers added: {result["added_count"]:>8}.\n'
@@ -404,7 +400,7 @@ class DatabaseInteraction(commands.Cog):
                 print(f"This carrier is no longer in the sheet: {problem_carrier}")
 
                 # Notify to #steve-says so it can be deleted.
-                problem_embed = discord.Embed(
+                problem_embed = Embed(
                     title="Avast Ye! Pirate Steve found a missing carrier in the database!",
                     description=f"This carrier is no longer in the GoogleSheet:\n"
                     f"CarrierName: **{problem_carrier.carrier_name}**\n"
@@ -440,7 +436,7 @@ class DatabaseInteraction(commands.Cog):
         target_date: str = None,
         include_timestamp: bool = False,
         include_not_unloaded: IncludeNotUnloadedChoices | None = None,
-    ) -> discord.Embed:
+    ) -> Embed:
 
         # Get faction state from the first carrier, assuming all carriers have the same state
         if all_carrier_data:
@@ -520,7 +516,7 @@ class DatabaseInteraction(commands.Cog):
         state_text = state_warning_msg if faction_state not in ["Public Holiday", None] else ""
 
         # Build the embed
-        stat_embed = discord.Embed(
+        stat_embed = Embed(
             title=f"Pirate Steve's Booze Cruise Tally {date_text}",
             description=f"{state_text}"
             f"**Total number of carrier trips:** — {total_carriers_inc_multiple_trips:>1}\n"
@@ -554,7 +550,7 @@ class DatabaseInteraction(commands.Cog):
         target_date: str = None,
         include_not_unloaded: IncludeNotUnloadedChoices | None = None,
         stat: StatChoices = "All",
-    ) -> discord.Embed:
+    ) -> Embed:
 
         # Get faction state from the first carrier, assuming all carriers have the same state
         if all_carrier_data:
@@ -739,7 +735,7 @@ class DatabaseInteraction(commands.Cog):
             case "Volume Maths":
                 description_text += volume_text
 
-        stat_embed = discord.Embed(
+        stat_embed = Embed(
             title=f"Pirate Steve's Extended Booze Tally {date_text}", description=description_text
         )
         stat_embed.set_footer(text="Stats requested by RandomGazz.\nPirate Steve approves of these stats!")
@@ -806,8 +802,8 @@ class DatabaseInteraction(commands.Cog):
             )
 
             await self.bot.change_presence(
-                activity=discord.Activity(
-                    type=discord.ActivityType.watching,
+                activity=Activity(
+                    type=ActivityType.watching,
                     name="the Sidewinders landing at Rackhams Peak.",
                     state=state_text,
                 )
@@ -835,7 +831,7 @@ class DatabaseInteraction(commands.Cog):
         ]
     )
     @check_command_channel(get_steve_says_channel())
-    async def user_update_database_from_googlesheets(self, interaction: discord.Interaction):
+    async def user_update_database_from_googlesheets(self, interaction: Interaction):
         """
         Slash command for updating the database from the GoogleSheet.
 
@@ -868,11 +864,11 @@ class DatabaseInteraction(commands.Cog):
         ]
     )
     @check_command_channel([get_wine_carrier_channel(), get_steve_says_channel()])
-    async def find_carriers_with_wine(self, interaction: discord.Interaction):
+    async def find_carriers_with_wine(self, interaction: Interaction):
         """
         Returns an interactive list of all the carriers with wine that has not yet been unloaded.
 
-        :param interaction discord.Interaction: The discord interaction context
+        :param interaction Interaction: The discord interaction context
         :returns: An interactive message embed.
         :rtype: Union[discord.Message, dict]
         """
@@ -927,11 +923,11 @@ class DatabaseInteraction(commands.Cog):
     @describe(carrier_id="The XXX-XXX ID string for the carrier")
     @check_roles([*server_council_role_ids(), server_mod_role_id(), server_sommelier_role_id()])
     @check_command_channel(get_steve_says_channel())
-    async def wine_mark_completed_forcefully(self, interaction: discord.Interaction, carrier_id: str):
+    async def wine_mark_completed_forcefully(self, interaction: Interaction, carrier_id: str):
         """
         Forcefully marks a carrier as completed an unload. Ideally will never be used.
 
-        :param discord.Interaction interaction: The discord interaction context.
+        :param Interaction interaction: The discord interaction context.
         :param str carrier_id: The XXX-XXX carrier ID you want to action.
         :returns: None
         """
@@ -948,7 +944,7 @@ class DatabaseInteraction(commands.Cog):
             await interaction.edit_original_response(content=e.message)
             return
 
-        carrier_embed = discord.Embed(
+        carrier_embed = Embed(
             title=f"Argh We found this data for {carrier_id}:",
             description=f"CarrierName: **{carrier_data.carrier_name}**\n"
             f"ID: **{carrier_data.carrier_identifier}**\n"
@@ -978,7 +974,7 @@ class DatabaseInteraction(commands.Cog):
                     )
                     pirate_steve_conn.commit()
                 print(f"Database for unloaded forcefully updated by {interaction.user.name} for {carrier_id}")
-                embed = discord.Embed(description=f"Fleet carrier {carrier_data.carrier_name} marked as unloaded.")
+                embed = Embed(description=f"Fleet carrier {carrier_data.carrier_name} marked as unloaded.")
                 embed.add_field(
                     name=f"Runs Made: {carrier_data.run_count}",
                     value=f"Unloads Completed: {carrier_data.total_unloads}",
@@ -1027,7 +1023,7 @@ class DatabaseInteraction(commands.Cog):
     @check_command_channel([get_wine_carrier_channel(), get_steve_says_channel()])
     async def find_carriers_for_platform(
         self,
-        interaction: discord.Interaction,
+        interaction: Interaction,
         platform: str,
         remaining_wine: bool = True,
     ):
@@ -1096,7 +1092,7 @@ class DatabaseInteraction(commands.Cog):
             server_wine_carrier_role_id(),
         ]
     )
-    async def find_carrier_by_id(self, interaction: discord.Interaction, carrier_id: str):
+    async def find_carrier_by_id(self, interaction: Interaction, carrier_id: str):
         await interaction.response.defer()
         db_update = await self._update_db()
         await self.report_db_update_result(db_update)
@@ -1108,7 +1104,7 @@ class DatabaseInteraction(commands.Cog):
             await interaction.edit_original_response(content=e.message)
             return
 
-        carrier_embed = discord.Embed(
+        carrier_embed = Embed(
             title=f"YARR! Found carrier details for the input: {carrier_id}",
             description=f"CarrierName: **{carrier_data.carrier_name}**\n"
             f"ID: **{carrier_data.carrier_identifier}**\n"
@@ -1137,7 +1133,7 @@ class DatabaseInteraction(commands.Cog):
     )
     async def tally(
         self,
-        interaction: discord.Interaction,
+        interaction: Interaction,
         cruise_select: int = 0,
         include_not_unloaded: IncludeNotUnloadedChoices | None = None,
     ):
@@ -1145,7 +1141,7 @@ class DatabaseInteraction(commands.Cog):
         Returns an embed inspired by (cloned from) @CMDR Suiseiseki's b.tally. Provided to keep things in one place
         is all.
 
-        :param discord.Interaction interaction: The discord interaction context
+        :param Interaction interaction: The discord interaction context
         :param int cruise_select: The cruise you want data on, counts backwards. 0 is this cruise, 1 is the last
             cruise etc...
         :return: None
@@ -1220,11 +1216,11 @@ class DatabaseInteraction(commands.Cog):
     )
     @describe(message_link="The message link to be pinned")
     @check_roles([*server_council_role_ids(), server_mod_role_id(), server_sommelier_role_id()])
-    async def pin_message(self, interaction: discord.Interaction, message_link: str):
+    async def pin_message(self, interaction: Interaction, message_link: str):
         """
         Pins the message in the channel.
 
-        :param Interaction discord.Interaction: The discord interaction context
+        :param Interaction Interaction: The discord interaction context
         :param str message_link: The link of message to pin
         :returns: None
         """
@@ -1287,11 +1283,11 @@ class DatabaseInteraction(commands.Cog):
     )
     @check_roles([*server_council_role_ids(), server_mod_role_id(), server_sommelier_role_id()])
     @check_command_channel([get_steve_says_channel()])
-    async def clear_all_pinned_message(self, interaction: discord.Interaction):
+    async def clear_all_pinned_message(self, interaction: Interaction):
         """
         Clears all the pinned messages
 
-        :param Interaction discord.Interaction: The discord interaction context
+        :param Interaction Interaction: The discord interaction context
         :returns: None
         """
 
@@ -1326,11 +1322,11 @@ class DatabaseInteraction(commands.Cog):
     @check_roles([*server_council_role_ids(), server_mod_role_id(), server_sommelier_role_id()])
     @describe(message_link="The message link to be unpinned")
     @check_command_channel([get_steve_says_channel()])
-    async def booze_unpin_message(self, interaction: discord.Interaction, message_link: str):
+    async def booze_unpin_message(self, interaction: Interaction, message_link: str):
         """
         Clears the pinned embed described by the message_link string.
 
-        :param Interaction discord.Interaction: The discord interaction context
+        :param Interaction Interaction: The discord interaction context
         :param str message_link: The message url to unpin
         :returns: None
         """
@@ -1388,7 +1384,7 @@ class DatabaseInteraction(commands.Cog):
     )
     async def extended_tally_stats(
         self,
-        interaction: discord.Interaction,
+        interaction: Interaction,
         cruise_select: int = 0,
         include_not_unloaded: IncludeNotUnloadedChoices | None = None,
         stat: StatChoices = "All",
@@ -1450,11 +1446,11 @@ class DatabaseInteraction(commands.Cog):
             server_connoisseur_role_id(),
         ]
     )
-    async def booze_carrier_summary(self, interaction: discord.Interaction):
+    async def booze_carrier_summary(self, interaction: Interaction):
         """
         Returns an embed of the current booze carrier summary.
 
-        :param Interaction discord.Interaction: The discord interaction context
+        :param Interaction Interaction: The discord interaction context
         :return: None
         """
 
@@ -1482,7 +1478,7 @@ class DatabaseInteraction(commands.Cog):
             end_timestamp = int(end_time.timestamp())
             duration_remaining = f"Pirate Steve thinks the holiday will end around <t:{end_timestamp}> (<t:{end_timestamp}:R>) [local timezone]."
 
-        stat_embed = discord.Embed(
+        stat_embed = Embed(
             title="Pirate Steve's Booze Carrier Summary",
             description=f"Total Carriers: {total_carriers}\n"
             f"Unloaded Carriers: {unloaded_carriers}\n"
@@ -1499,11 +1495,11 @@ class DatabaseInteraction(commands.Cog):
     @describe(carrier_id="The XXX-XXX ID string for the carrier")
     @check_roles([*server_council_role_ids(), server_mod_role_id(), server_sommelier_role_id()])
     @check_command_channel(get_steve_says_channel())
-    async def remove_carrier(self, interaction: discord.Interaction, carrier_id: str):
+    async def remove_carrier(self, interaction: Interaction, carrier_id: str):
         """
         Removes a carrier entry from the database after confirmation.
 
-        :param interaction discord.Interaction: The discord interaction context.
+        :param interaction Interaction: The discord interaction context.
         :param str carrier_id: The XXX-XXX carrier ID.
         :returns: None
         """
@@ -1517,7 +1513,7 @@ class DatabaseInteraction(commands.Cog):
             await interaction.edit_original_response(content=e.message)
             return
 
-        carrier_embed = discord.Embed(
+        carrier_embed = Embed(
             title=f"YARR! Pirate Steve found these details for the input: {carrier_id}",
             description=f"CarrierName: **{carrier_data.carrier_name}**\n"
             f"ID: **{carrier_data.carrier_identifier}**\n"
@@ -1579,7 +1575,7 @@ class DatabaseInteraction(commands.Cog):
         faction_state="The faction state to archive the data with (defaults to PH).",
     )
     async def archive_database(
-        self, interaction: discord.Interaction, start_date: str, faction_state: FactionStateChoices = "Public Holiday"
+        self, interaction: Interaction, start_date: str, faction_state: FactionStateChoices = "Public Holiday"
     ):
         """
         Performs the steps to archive the current booze cruise database. Only possible if we are not in a PH
@@ -1634,7 +1630,7 @@ class DatabaseInteraction(commands.Cog):
             )
             return
 
-        check_embed = discord.Embed(
+        check_embed = Embed(
             title="Validate the request",
             description="You have requested to archive the data in the database with the following:\n"
             f'**Holiday Start:** {start_date.strftime("%d-%m-%y")} - '
@@ -1701,11 +1697,11 @@ class DatabaseInteraction(commands.Cog):
     )
     @check_roles([*server_council_role_ids(), server_mod_role_id(), server_sommelier_role_id()])
     @check_command_channel(get_steve_says_channel())
-    async def configure_signup_forms(self, interaction: discord.Interaction):
+    async def configure_signup_forms(self, interaction: Interaction):
         """
         Reconfigures the signup sheet and the tracking sheet to the new forms. Only usable by an admin.
 
-        :param interaction discord.Interaction: The discord interaction context.
+        :param interaction Interaction: The discord interaction context.
         :returns: None
         """
 
@@ -1810,7 +1806,7 @@ class DatabaseInteraction(commands.Cog):
 
         print(f"We received valid data for all points, confirm them with the {interaction.user.name} it is correct.")
 
-        confirm_embed = discord.Embed(
+        confirm_embed = Embed(
             title="Pirate Steve wants you to confirm the new values.",
             description=f"**New signup URL:** {new_loader_signup_form}\n"
             f"**New worksheet key:** {new_worksheet_key}\n"
@@ -1877,11 +1873,11 @@ class DatabaseInteraction(commands.Cog):
     )
     @check_roles([*server_council_role_ids(), server_mod_role_id(), server_sommelier_role_id()])
     @check_command_channel(get_steve_says_channel())
-    async def reuse_signup_forms(self, interaction: discord.Interaction):
+    async def reuse_signup_forms(self, interaction: Interaction):
         """
         Reuses the signup sheet and the tracking sheet. And re unlocks the db. Only usable by an admin.
 
-        :param interaction discord.Interaction: The discord interaction context.
+        :param interaction Interaction: The discord interaction context.
         :returns: None
         """
 
@@ -1908,7 +1904,7 @@ class DatabaseInteraction(commands.Cog):
             )
             return
 
-        confirm_embed = discord.Embed(
+        confirm_embed = Embed(
             title="Pirate Steve wants you to confirm the values.",
             description=f"**Signup URL:** {original_loader_signup_form}\n"
             f"**Worksheet key:** {original_worksheet_key}\n"
@@ -1969,7 +1965,7 @@ class DatabaseInteraction(commands.Cog):
     )
     async def biggest_cruise_tally(
         self,
-        interaction: discord.Interaction,
+        interaction: Interaction,
         extended: bool = False,
         include_not_unloaded: IncludeNotUnloadedChoices | None = None,
         stat: StatChoices = "All",
@@ -1977,7 +1973,7 @@ class DatabaseInteraction(commands.Cog):
         """
         Returns the tally for the cruise with the most wine.
 
-        :param discord.Interaction interaction: The discord interaction context.
+        :param Interaction interaction: The discord interaction context.
         :param bool extended: If the extended stats should be shown.
         :param IncludeNotUnloadedChoices include_not_unloaded: If we should include carriers that did not unload
         :returns: None
@@ -2022,11 +2018,11 @@ class DatabaseInteraction(commands.Cog):
             server_wine_carrier_role_id(),
         ]
     )
-    async def carrier_stats(self, interaction: discord.Interaction, carrier_id: str):
+    async def carrier_stats(self, interaction: Interaction, carrier_id: str):
         """
         Returns the stats for a specific carrier.
 
-        :param discord.Interaction interaction: The discord interaction context.
+        :param Interaction interaction: The discord interaction context.
         :param str carrier_id: he XXX-XXX carrier ID.
         :returns: None
         """
@@ -2060,7 +2056,7 @@ class DatabaseInteraction(commands.Cog):
         total_cruises = len(carrier_data)
         owner = carrier_data[-1].discord_username
 
-        stat_embed = discord.Embed(
+        stat_embed = Embed(
             title=f"Stats for {carrier_name} ({carrier_id})",
             description=f"Total Wine: {total_wine}\n"
             f"Total Runs: {total_runs}\n"
@@ -2073,11 +2069,11 @@ class DatabaseInteraction(commands.Cog):
     @app_commands.command(name="booze_purge_full_carriers", description="Purges full carriers from the database.")
     @check_roles([*server_council_role_ids(), server_mod_role_id(), server_sommelier_role_id()])
     @check_command_channel(get_steve_says_channel())
-    async def purge_full_carriers(self, interaction: discord.Interaction):
+    async def purge_full_carriers(self, interaction: Interaction):
         """
         Purges full carriers from the database.
 
-        :param discord.Interaction interaction: The discord interaction context.
+        :param Interaction interaction: The discord interaction context.
         :returns: None
         """
 
@@ -2093,7 +2089,7 @@ class DatabaseInteraction(commands.Cog):
 
         print(f"Found {len(carrier_data)} full carriers to delete. Sending confirmation message.")
 
-        confirmation_embed = discord.Embed(
+        confirmation_embed = Embed(
             title=f"Purge {len(carrier_data)} Full Carriers?",
             description="Are you sure you want to delete all the remaining full carriers?",
         )

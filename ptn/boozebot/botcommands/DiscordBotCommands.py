@@ -1,21 +1,17 @@
-# libraries
 import logging
 import os
 import random
 import sys
 
-# discord.py
 import discord
 from discord.ext import commands
+# local metadata
 from ptn.boozebot._metadata import __version__
-# local constants
 from ptn.boozebot.constants import (
-    I_AM_STEVE_GIF, bot, bot_guild_id, error_gifs, get_bot_control_channel, server_council_role_ids, server_sommelier_role_id
+    I_AM_STEVE_GIF, bot, bot_guild_id, error_gifs, get_bot_control_channel, server_council_role_ids,
+    server_sommelier_role_id
 )
-# local modules
-from ptn.boozebot.modules.ErrorHandler import (
-    on_app_command_error
-)
+from ptn.boozebot.modules.ErrorHandler import on_app_command_error
 
 """
 A primitive global error handler for text commands.

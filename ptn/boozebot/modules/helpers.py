@@ -4,18 +4,19 @@ A module for helper functions called by other modules.
 Depends on: constants, ErrorHandler, database
 """
 
+# import libraries
 import datetime
 import functools
-# import libraries
 import sys
 
-# import discord.py
+# import discord libraries
 import discord
-# import local constants
-import ptn.boozebot.constants as constants
 from discord import app_commands
 from discord.ext import commands
-from ptn.boozebot.constants import bot, bot_guild_id, get_pilot_role_id, get_primary_booze_discussions_channel
+# import local constants
+from ptn.boozebot.constants import (
+    EMBED_COLOUR_ERROR, bot, bot_guild_id, get_pilot_role_id, get_primary_booze_discussions_channel
+)
 # import local modules
 from ptn.boozebot.modules.ErrorHandler import CommandChannelError, CommandRoleError
 
@@ -121,7 +122,7 @@ def check_text_command_channel(permitted_channel):
             # problem, wrong channel, no progress
             embed = discord.Embed(
                 description=f"Sorry, you can only run this command out of: <#{permitted_channel}>.",
-                color=constants.EMBED_COLOUR_ERROR,
+                color=EMBED_COLOUR_ERROR,
             )
             await ctx.channel.send(embed=embed)
             return False

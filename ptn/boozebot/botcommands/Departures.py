@@ -4,19 +4,15 @@ Cog for unloading related commands
 """
 
 import logging
-# libraries
 import time
 from datetime import datetime, timedelta
 from typing import Literal
 
-# discord.py
 import discord
 from discord import app_commands
 from discord.app_commands import Choice, describe
 from discord.ext import commands, tasks
-# local classes
 from ptn.boozebot.classes.BoozeCarrier import BoozeCarrier
-# local constants
 from ptn.boozebot.constants import (
     CARRIER_ID_RE, N_SYSTEMS, bot, bot_guild_id, get_departure_announcement_channel, get_steve_says_channel,
     get_thoon_emoji_id, get_wine_carrier_channel, server_connoisseur_role_id, server_council_role_ids,
@@ -24,7 +20,6 @@ from ptn.boozebot.constants import (
     wine_carrier_command_channel
 )
 from ptn.boozebot.database.database import pirate_steve_db
-# local modules
 from ptn.boozebot.modules.ErrorHandler import on_app_command_error
 from ptn.boozebot.modules.helpers import check_command_channel, check_roles, track_last_run
 from ptn.boozebot.modules.Settings import settings

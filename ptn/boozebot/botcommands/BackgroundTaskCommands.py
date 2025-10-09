@@ -1,14 +1,10 @@
-# discord.py
 import discord
 from discord import app_commands
 from discord.app_commands import Choice, describe
 from discord.ext import commands
-# local constants
 from ptn.boozebot.constants import (
-    bot, get_steve_says_channel, server_council_role_ids, server_mod_role_id,
-    server_sommelier_role_id
+    bot, get_steve_says_channel, server_council_role_ids, server_mod_role_id, server_sommelier_role_id
 )
-# local modules
 from ptn.boozebot.modules.helpers import check_command_channel, check_roles
 
 

@@ -1,10 +1,7 @@
 import asyncio
 
-# discord.py
 import discord
-# local constants
 from ptn.boozebot.constants import bot
-# local modules
 
 
 async def createPagination(

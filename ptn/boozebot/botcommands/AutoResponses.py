@@ -1,19 +1,15 @@
-# libraries
 import random
 import re
 
-# discord.py
 import discord
 from discord import app_commands
 from discord.ext import commands
 from ptn.boozebot.classes.AutoResponse import AutoResponse
-# local constants
 from ptn.boozebot.constants import (
     get_primary_booze_discussions_channel, get_steve_says_channel, get_wine_carrier_channel,
     get_wine_cellar_deliveries_channel, ping_response_messages, server_council_role_ids, server_mod_role_id,
     server_sommelier_role_id
 )
-# local modules
 from ptn.boozebot.database.database import pirate_steve_conn, pirate_steve_db, pirate_steve_db_lock
 from ptn.boozebot.modules.ErrorHandler import on_app_command_error
 from ptn.boozebot.modules.helpers import check_command_channel, check_roles

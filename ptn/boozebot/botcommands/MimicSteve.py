@@ -3,17 +3,12 @@ Cog for the commands related to opening and closing the cruise channels and role
 
 """
 
-# libraries
-
-# discord.py
 import discord
 from discord import app_commands
 from discord.ext import commands
-# local constants
 from ptn.boozebot.constants import (
     bot, bot_guild_id, get_steve_says_channel, server_council_role_ids, server_mod_role_id, server_sommelier_role_id
 )
-# local modules
 from ptn.boozebot.modules.ErrorHandler import on_app_command_error
 from ptn.boozebot.modules.helpers import check_roles
 

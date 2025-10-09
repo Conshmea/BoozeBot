@@ -3,28 +3,25 @@ The Python script that starts the bot.
 
 """
 
-# import libraries
 import asyncio
 import logging
 
 from discord import ConnectionClosed, GatewayNotFound, HTTPException, LoginFailure
 from discord.ext.prometheus import PrometheusCog
 from discord.utils import setup_logging
+# bot cogs
 from ptn.boozebot.botcommands.AutoResponses import AutoResponses
 from ptn.boozebot.botcommands.BackgroundTaskCommands import BackgroundTaskCommands
 from ptn.boozebot.botcommands.Cleaner import Cleaner
 from ptn.boozebot.botcommands.Corked import Corked
 from ptn.boozebot.botcommands.DatabaseInteraction import DatabaseInteraction
 from ptn.boozebot.botcommands.Departures import Departures
-# import bot Cogs
 from ptn.boozebot.botcommands.DiscordBotCommands import DiscordBotCommands
 from ptn.boozebot.botcommands.MakeWineCarrier import MakeWineCarrier
 from ptn.boozebot.botcommands.MimicSteve import MimicSteve
 from ptn.boozebot.botcommands.PublicHoliday import PublicHoliday
 from ptn.boozebot.botcommands.Unloading import Unloading
-# import bot object, token, production status
 from ptn.boozebot.constants import LOG_LEVEL, TOKEN, _production, bot, log_handler
-# import build functions
 from ptn.boozebot.database.database import build_database_on_startup
 
 print(f"Booze bot is connecting against production: {_production}.")
