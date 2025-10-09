@@ -13,7 +13,7 @@ import logging
 import discord
 # import local constants
 import ptn.boozebot.constants as constants
-from discord import Interaction, app_commands
+from discord import Interaction, app_commands, InteractionResponded
 from discord.app_commands import AppCommandError
 from ptn.boozebot.constants import bot, bot_spam_channel
 
@@ -93,7 +93,7 @@ async def on_generic_error(interaction: Interaction, error):  # an error handler
         embed = discord.Embed(description=f"❌ {error}", color=constants.EMBED_COLOUR_ERROR)
         try:
             await interaction.response.send_message(embed=embed, ephemeral=True)
-        except:
+        except InteractionResponded:
             await interaction.followup.send(embed=embed, ephemeral=True)
 
     elif isinstance(
@@ -106,12 +106,12 @@ async def on_generic_error(interaction: Interaction, error):  # an error handler
         if is_private:  # message should be ephemeral
             try:
                 await interaction.response.send_message(embed=embed, ephemeral=True)
-            except:
+            except InteractionResponded:
                 await interaction.followup.send(embed=embed, ephemeral=True)
         else:  # message should be public - use for CCO commands
             try:
                 await interaction.response.send_message(embed=embed)
-            except:
+            except InteractionResponded:
                 await interaction.followup.send(embed=embed)
 
     elif isinstance(error, AsyncioTimeoutError):
@@ -121,7 +121,7 @@ async def on_generic_error(interaction: Interaction, error):  # an error handler
         embed = discord.Embed(description=f"❌⏲ {message}", color=constants.EMBED_COLOUR_ERROR)
         try:
             await interaction.response.send_message(embed=embed, ephemeral=ephemeral)
-        except:
+        except InteractionResponded:
             await interaction.followup.send(embed=embed, ephemeral=ephemeral)
 
     elif isinstance(error, SilentError):
@@ -174,12 +174,12 @@ async def on_app_command_error(
             if is_private:  # message should be ephemeral
                 try:
                     await interaction.response.send_message(embed=embed, ephemeral=True)
-                except:
+                except InteractionResponded:
                     await interaction.followup.send(embed=embed, ephemeral=True)
             else:  # message should be public - use for CCO commands
                 try:
                     await interaction.response.send_message(embed=embed)
-                except:
+                except InteractionResponded:
                     await interaction.followup.send(embed=embed)
 
         elif isinstance(error, GenericError):
@@ -187,7 +187,7 @@ async def on_app_command_error(
             embed = discord.Embed(description=f"❌ {error}", color=constants.EMBED_COLOUR_ERROR)
             try:
                 await interaction.response.send_message(embed=embed, ephemeral=True)
-            except:
+            except InteractionResponded:
                 await interaction.followup.send(embed=embed, ephemeral=True)
 
         else:
@@ -196,7 +196,7 @@ async def on_app_command_error(
             embed = discord.Embed(description=f"❌ Unhandled Error: {error}", color=constants.EMBED_COLOUR_ERROR)
             try:
                 await interaction.response.send_message(embed=embed, ephemeral=True)
-            except:
+            except InteractionResponded:
                 await interaction.followup.send(embed=embed, ephemeral=True)
 
     except Exception as e:

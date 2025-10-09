@@ -77,7 +77,7 @@ class MimicSteve(commands.Cog):
         :param TextChannel send_channel: The channel for the bot to send the message to.
         :returns: 2 discord messages, 1 in the channel it is run and 1 as the output.
         """
-        if send_channel == None:
+        if not send_channel:
             send_channel = interaction.channel
 
         print(
