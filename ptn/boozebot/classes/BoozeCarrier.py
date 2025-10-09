@@ -1,4 +1,3 @@
-
 from ptn.boozebot.constants import CARRIER_ID_RE
 
 

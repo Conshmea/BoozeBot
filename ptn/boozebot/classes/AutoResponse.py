@@ -4,8 +4,7 @@ from datetime import datetime, timedelta
 
 from discord import Message
 from ptn.boozebot.constants import (
-    server_connoisseur_role_id, server_council_role_ids, server_mod_role_id,
-    server_sommelier_role_id
+    server_connoisseur_role_id, server_council_role_ids, server_mod_role_id, server_sommelier_role_id
 )
 
 

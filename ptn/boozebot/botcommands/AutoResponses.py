@@ -222,6 +222,7 @@ class ListAutoResponseView(discord.ui.View):
     """
     View for displaying paginated list of auto responses with edit buttons.
     """
+
     def __init__(self, auto_responses: list[AutoResponse], cog: AutoResponses):
         super().__init__(timeout=180)
         self.auto_responses = auto_responses.copy()
@@ -305,6 +306,7 @@ class ListAutoResponseView(discord.ui.View):
         """
         Create callback function for edit buttons.
         """
+
         async def edit_callback(interaction: discord.Interaction):
             auto_response = self.auto_responses[index]
             modal = EditAutoResponseModal(auto_response, self)
@@ -351,6 +353,7 @@ class EditAutoResponseModal(discord.ui.Modal):
     """
     Modal for editing auto response trigger and response text.
     """
+
     def __init__(self, auto_response: AutoResponse, view: ListAutoResponseView):
         super().__init__(title=f"Edit Auto Response: {auto_response.name}")
         self.auto_response = auto_response

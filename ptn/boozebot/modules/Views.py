@@ -1,7 +1,7 @@
 import discord.colour
 from discord import ButtonStyle, Embed, Interaction, ui
-
 from ptn.boozebot.constants import INTERACTION_CHECK_GIF
+
 
 class ConfirmView(ui.View):
     def __init__(self, author: discord.Member):
@@ -9,7 +9,9 @@ class ConfirmView(ui.View):
         self.author = author
         self.value: bool | None = None
 
-    async def interaction_check(self, interaction: discord.Interaction):  # only allow original command user to interact with buttons
+    async def interaction_check(
+        self, interaction: discord.Interaction
+    ):  # only allow original command user to interact with buttons
         return await interaction_check_owner(self, interaction)
 
     @ui.button(label="Confirm", style=ButtonStyle.green)
@@ -34,8 +36,7 @@ async def interaction_check_owner(view: ui.View, interaction: Interaction):
         return True
     else:
         embed = Embed(
-            description="Only the command author may use these interactions.",
-            color=discord.colour.Colour.red()
+            description="Only the command author may use these interactions.", color=discord.colour.Colour.red()
         )
         embed.set_image(url=INTERACTION_CHECK_GIF)
         embed.set_footer(text="Seriously, are you 4? 🙄")
